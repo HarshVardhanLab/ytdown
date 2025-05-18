@@ -1,7 +1,8 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
 import yt_dlp
 import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this for production
@@ -22,11 +23,7 @@ def list_formats(url):
     Lists all available formats for the given video URL.
     Returns the video info dictionary and formats list.
     """
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'cookiesfrombrowser': ('chrome',)  # Add browser cookies for authentication
-    }
+    ydl_opts = {'quiet': True, 'no_warnings': True}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = info.get('formats', [])
@@ -61,13 +58,13 @@ def download_video(url, format_code, formats):
 
         def hook(self, d):
             if d['status'] == 'downloading':
-                session['download_status'] = 'downloading'
-                session['download_percent'] = float(d.get('_percent_str', '0%').rstrip('%'))
-                session['download_speed'] = d.get('_speed_str', 'N/A')
-                session['download_eta'] = d.get('_eta_str', 'N/A')
+                request.session['download_status'] = 'downloading'
+                request.session['download_percent'] = float(d.get('_percent_str', '0%').rstrip('%'))
+                request.session['download_speed'] = d.get('_speed_str', 'N/A')
+                request.session['download_eta'] = d.get('_eta_str', 'N/A')
             elif d['status'] == 'finished':
-                session['download_status'] = 'finished'
-                session['download_percent'] = 100
+                request.session['download_status'] = 'finished'
+                request.session['download_percent'] = 100
 
     progress_logger = ProgressLogger()
 
@@ -78,7 +75,6 @@ def download_video(url, format_code, formats):
         'quiet': False,
         'no_warnings': False,
         'progress_hooks': [progress_logger.hook],
-        'cookiesfrombrowser': ('chrome',)  # Add browser cookies for authentication
     }
 
     try:
@@ -88,14 +84,18 @@ def download_video(url, format_code, formats):
             return filename
     except Exception as e:
         raise Exception(f"Download error: {str(e)}")
+    
+from flask import jsonify
+import time
 
+# Example using Flask's session (for simplicity)
 @app.route('/progress')
 def progress():
     return jsonify({
-        'status': session.get('download_status', 'starting'),
-        'percent': session.get('download_percent', 0),
-        'speed': session.get('download_speed', 'N/A'),
-        'eta': session.get('download_eta', 'N/A')
+        'status': request.session.get('download_status', 'starting'),
+        'percent': request.session.get('download_percent', 0),
+        'speed': request.session.get('download_speed', 'N/A'),
+        'eta': request.session.get('download_eta', 'N/A')
     })
 
 @app.route('/', methods=['GET', 'POST'])
@@ -141,7 +141,6 @@ def download():
 @app.route('/downloads/<filename>')
 def download_file(filename):
     return send_from_directory(app.config['DOWNLOAD_FOLDER'], filename, as_attachment=True)
-
 
 if __name__ == '__main__':
     app.run()
