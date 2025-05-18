@@ -1,0 +1,59 @@
+<!-- templates/download.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card download-complete">
+    <h2>Download in Progress</h2>
+    <p>{{ video_title }}</p>
+    
+    <div id="progress-container" style="margin: 20px 0;">
+        <div style="display: flex; justify-content: space-between;">
+            <span id="status">Starting download...</span>
+            <span id="percent">0%</span>
+        </div>
+        <progress id="progress-bar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+            <span id="speed">Speed: N/A</span>
+            <span id="eta">ETA: N/A</span>
+        </div>
+    </div>
+
+    <div id="download-complete" style="display: none;">
+        <a href="{{ url_for('download_file', filename=filename) }}" class="download-link">Download Now</a>
+    </div>
+
+    <p style="margin-top: 20px;">
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </p>
+</div>
+
+<script>
+    const taskId = "{{ task_id }}";
+    
+    function checkProgress() {
+        fetch(`/progress/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent = data.status;
+                document.getElementById('percent').textContent = data.percent + '%';
+                document.getElementById('progress-bar').value = data.percent;
+                document.getElementById('speed').textContent = 'Speed: ' + data.speed;
+                document.getElementById('eta').textContent = 'ETA: ' + data.eta;
+
+                if (data.status === 'completed') {
+                    clearInterval(progressInterval);
+                    document.getElementById('download-complete').style.display = 'block';
+                    document.getElementById('progress-container').style.display = 'none';
+                } else if (data.status === 'error') {
+                    clearInterval(progressInterval);
+                    alert('Download error: ' + data.message);
+                } else {
+                    setTimeout(checkProgress, 1000);
+                }
+            });
+    }
+
+    // Start checking progress
+    checkProgress();
+</script>
+{% endblock %}

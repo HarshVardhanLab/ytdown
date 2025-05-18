@@ -1,0 +1,47 @@
+<!-- templates/formats.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>Available Formats</h1>
+    <p>{{ video_info.title }}</p>
+</header>
+
+<div class="card">
+    <h2>Video Formats</h2>
+    <form action="{{ url_for('download') }}" method="POST">
+        <input type="hidden" name="url" value="{{ url }}">
+        
+        <table class="format-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Extension</th>
+                    <th>Resolution</th>
+                    <th>Note</th>
+                    <th>Select</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in formats %}
+                    {% if f.vcodec != 'none' %}
+                    <tr>
+                        <td>{{ f.format_id }}</td>
+                        <td>{{ f.ext }}</td>
+                        <td>{{ f.resolution if f.resolution else 'audio' }}</td>
+                        <td>{{ f.format_note if f.format_note else '' }}</td>
+                        <td>
+                            <input type="radio" name="format_code" value="{{ f.format_id }}" required>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 20px;">
+            <input type="submit" value="Download Selected Format" class="btn">
+        </div>
+    </form>
+</div>
+{% endblock %}

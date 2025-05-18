@@ -1,0 +1,19 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>YouTube Video Downloader</h1>
+    <p>Download high-quality videos from YouTube</p>
+</header>
+
+<div class="card">
+    <form action="{{ url_for('index') }}" method="POST">
+        <div class="form-group">
+            <label for="url">YouTube Video URL:</label>
+            <input type="text" id="url" name="url" placeholder="https://www.youtube.com/watch?v=..." required>
+        </div>
+        <input type="submit" value="Get Available Formats" class="btn">
+    </form>
+</div>
+{% endblock %}
